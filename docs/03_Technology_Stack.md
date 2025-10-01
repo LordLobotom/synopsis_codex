@@ -485,6 +485,14 @@ var result = evaluator.Evaluate("1 + 2 * x", new Dictionary<string, object?> { [
 
 **Usage:**
 
+## 7. Web UI (Blazor Server)
+
+- Framework: ASP.NET Core Blazor Server (net8.0)
+- Why: Modern, server‑rendered UI using C#; no Node toolchain required; easy reuse of EF Core + NCalc.
+- Project: `src/ReportGenerator.Web`
+- Features (initial): Template list, body editor with `{{expr}}` placeholders, parameters JSON, live preview, export JSON endpoint.
+- Next: Drag/resize designer canvas using JS interop (Interact.js/Konva/Fabric), PDF export (QuestPDF).
+
 ```csharp
 using ZXing;
 using ZXing.Windows.Compatibility;

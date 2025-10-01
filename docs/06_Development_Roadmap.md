@@ -147,15 +147,15 @@ ReportGenerator.sln
 - Unit tests for all functions
 
 **Tasks:**
-- [ ] Install NCalc package
-- [ ] Create IExpressionEvaluator interface
-- [ ] Implement ExpressionEvaluator
-- [ ] Add mathematical functions (15)
-- [ ] Add string functions (20)
-- [ ] Add date/time functions (15)
-- [ ] Add aggregate functions (8)
-- [ ] Add conditional functions (5)
-- [ ] Add conversion functions (5)
+- [x] Install NCalc package (migrated to NCalc.Core 4.x)
+- [x] Create IExpressionEvaluator interface
+- [x] Implement ExpressionEvaluator (AST + visitor)
+- [x] Add mathematical functions (subset)
+- [x] Add string functions (subset)
+- [x] Add date/time functions (subset)
+- [ ] Add aggregate functions
+- [x] Add conditional functions (subset)
+- [x] Add conversion functions (subset)
 - [ ] Write comprehensive tests
 
 **Estimated Hours:** 60 hours
@@ -178,12 +178,12 @@ ReportGenerator.sln
 - Unit tests
 
 **Tasks:**
-- [ ] Install ZXing.Net package
+- [x] Install ZXing.Net package
 - [ ] Create IBarcodeGenerator interface
-- [ ] Implement BarcodeGenerator
-- [ ] Add Code 39/128/93 support
-- [ ] Add EAN/UPC support
-- [ ] Add QR code support
+- [x] Implement basic barcode rendering in WPF canvas
+- [x] Add Code 39/128 support
+- [x] Add EAN/UPC (EAN_13) support
+- [x] Add QR code support
 - [ ] Implement checksum algorithms
 - [ ] Add rotation support
 - [ ] Write tests for all formats
@@ -213,13 +213,13 @@ ReportGenerator.sln
 
 **Tasks:**
 - [ ] Design UI mockups
-- [ ] Create DesignerView XAML
-- [ ] Implement DesignerViewModel
-- [ ] Create toolbox with element types
-- [ ] Build properties panel
-- [ ] Implement canvas rendering
-- [ ] Add drag-and-drop support
-- [ ] Add element selection
+- [x] Create DesignerView XAML (single-window prototype)
+- [x] Implement DesignerViewModel (basic)
+- [x] Create toolbox with element types (Text/Expr/Rect/Barcode)
+- [x] Build properties panel (basic)
+- [x] Implement canvas rendering (A4 surface)
+- [x] Add drag-and-drop support
+- [x] Add element selection
 - [ ] Add element resizing
 - [ ] Implement undo/redo stack
 - [ ] Add keyboard shortcuts

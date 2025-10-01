@@ -1,6 +1,6 @@
 # Report Generator - Documentation Index
 
-**Project:** Modern Report Generator (WPF/.NET 8)
+**Project:** Modern Report Generator (WPF/Web, .NET 8)
 **Version:** 1.0.0
 **Date:** October 1, 2025
 **Status:** Design Phase
@@ -9,7 +9,7 @@
 
 ## 📋 Documentation Overview
 
-This directory contains comprehensive design documentation for the modern Report Generator system - a complete rewrite of the legacy SINEA Report Generator using .NET 8, WPF, and modern architecture patterns.
+This directory contains comprehensive design documentation for the modern Report Generator system - a complete rewrite of the legacy SINEA Report Generator using .NET 8, WPF and Blazor Server, and modern architecture patterns.
 
 ---
 
@@ -193,11 +193,12 @@ Complete API and interface contracts.
 
 ### Technology Stack
 ```
-Frontend:     WPF + .NET 8 + Material Design
+Frontend:     WPF + .NET 8 + Material Design, Blazor Server (web)
 Architecture: Clean Architecture + MVVM
 Database:     SQLite (templates) + MSSQL (data)
 ORM:          Entity Framework Core + Dapper
 Expression:   NCalc
+Web:          Blazor Server (drag & drop designer MVP)
 Barcode:      ZXing.Net
 PDF:          QuestPDF (Phase 2)
 Testing:      xUnit + FluentAssertions + Moq

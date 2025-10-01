@@ -11,6 +11,7 @@ using ReportGenerator.Infrastructure.Data;
 using ReportGenerator.Infrastructure.Expressions;
 using ReportGenerator.Infrastructure.Repositories;
 using Serilog;
+using System.Threading.Tasks;
 
 namespace ReportGenerator.App;
 
@@ -35,6 +36,28 @@ public partial class App : System.Windows.Application
             .ReadFrom.Configuration(envConfig)
             .WriteTo.File(Path.Combine(logsPath, "app-.log"), rollingInterval: RollingInterval.Day)
             .CreateLogger();
+
+        // Global exception logging
+        this.DispatcherUnhandledException += (s, exArgs) =>
+        {
+            Log.Error(exArgs.Exception, "DispatcherUnhandledException");
+            try
+            {
+                var logsPath = Path.Combine(AppContext.BaseDirectory, "Logs");
+                MessageBox.Show($"Došlo k chybě: {exArgs.Exception.Message}\nPodrobnosti v logu: {logsPath}", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch { }
+            exArgs.Handled = true; // prevent app crash; user can continue
+        };
+        AppDomain.CurrentDomain.UnhandledException += (s, exArgs) =>
+        {
+            Log.Fatal(exArgs.ExceptionObject as Exception, "UnhandledException");
+        };
+        TaskScheduler.UnobservedTaskException += (s, exArgs) =>
+        {
+            Log.Error(exArgs.Exception, "UnobservedTaskException");
+            exArgs.SetObserved();
+        };
 
         HostInstance = new HostBuilder()
             .ConfigureServices((_, services) =>

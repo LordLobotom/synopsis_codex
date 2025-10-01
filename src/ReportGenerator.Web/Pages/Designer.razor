@@ -1,0 +1,196 @@
+@page "/"
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject ReportGenerator.Application.Services.TemplateService TemplateService
+@inject ReportGenerator.Domain.Interfaces.IExpressionEvaluator Evaluator
+
+<div class="container-fluid">
+  <div class="row g-3">
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <i class="bi bi-collection me-2"></i> Templates
+        </div>
+        <div class="card-body">
+          <ul class="list">
+            @foreach (var t in Templates)
+            {
+              <li class="@(SelectedTemplate?.Id == t.Id ? "selected" : null)" @onclick="(() => Select(t))">@t.Name</li>
+            }
+          </ul>
+          <div class="input-group mt-3">
+            <input class="form-control" @bind="NewTemplateName" placeholder="New template name" />
+            <button class="btn btn-primary" @onclick="AddTemplate"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-primary btn-sm" @onclick="AddText"><i class="bi bi-type"></i> Text</button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="AddExpr"><i class="bi bi-braces"></i> Expr</button>
+          <button class="btn btn-outline-primary btn-sm" @onclick="AddRect"><i class="bi bi-square"></i> Rect</button>
+          <div class="vr"></div>
+          <button class="btn btn-outline-secondary btn-sm" @onclick="Clear"><i class="bi bi-eraser"></i> Clear</button>
+          <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh"><i class="bi bi-arrow-repeat"></i> Refresh</button>
+          <button class="btn btn-primary btn-sm" @onclick="Save"><i class="bi bi-save"></i> Save</button>
+        </div>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <i class="bi bi-stickies me-2"></i> Canvas
+        </div>
+        <div class="card-body d-flex justify-content-center">
+          <div id="sheet" class="sheet" @ref="SheetRef">
+            @foreach (var el in Elements)
+            {
+              <div class="design-item" id="el-@el.Id" style="left:@el.Xpx; top:@el.Ypx; width:@el.Wpx; height:@el.Hpx" data-id="@el.Id">
+                @if (el.Kind == ElementKind.Rectangle)
+                {
+                  <div class="rect"></div>
+                }
+                else
+                {
+                  <div class="text">@el.Display</div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <i class="bi bi-sliders me-2"></i> Parameters
+        </div>
+        <div class="card-body">
+          <textarea class="form-control" @bind="ParamsJson"></textarea>
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh"><i class="bi bi-arrow-repeat"></i> Refresh</button>
+            @if (SelectedTemplate != null)
+            {
+              <a class="btn btn-outline-primary btn-sm" href="/api/templates/@SelectedTemplate.Id/export" target="_blank"><i class="bi bi-box-arrow-up"></i> Export JSON</a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  private List<ReportGenerator.Domain.Entities.Template> Templates = new();
+  private ReportGenerator.Domain.Entities.Template? SelectedTemplate;
+  private string NewTemplateName = string.Empty;
+  private string ParamsJson = "{\n  \"CustomerName\": \"John Doe\",\n  \"Total\": 123.45\n}";
+  private List<DesignElement> Elements = new();
+  // reserved for future default element type selection
+  private ElementReference SheetRef;
+
+  protected override async Task OnInitializedAsync()
+  {
+    Templates = (await TemplateService.ListAsync()).ToList();
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    // Re-run init every render to attach handlers to newly added elements
+    await JS.InvokeVoidAsync("Designer.init", DotNetObjectReference.Create(this));
+  }
+
+  private void Select(ReportGenerator.Domain.Entities.Template t)
+  {
+    SelectedTemplate = t;
+    Elements.Clear();
+    try
+    {
+      if (!string.IsNullOrWhiteSpace(t.Description))
+      {
+        var list = System.Text.Json.JsonSerializer.Deserialize<List<DesignElement>>(t.Description!);
+        if (list != null) Elements = list;
+      }
+    }
+    catch { }
+    Refresh();
+  }
+
+  private async Task AddTemplate()
+  {
+    if (string.IsNullOrWhiteSpace(NewTemplateName)) return;
+    var created = await TemplateService.CreateAsync(NewTemplateName);
+    Templates.Add(created);
+    SelectedTemplate = created;
+    NewTemplateName = string.Empty;
+  }
+
+  private void AddText() => Elements.Add(DesignElement.CreateText(50, 50, 160, 28, "Text"));
+  private void AddExpr() => Elements.Add(DesignElement.CreateExpr(50, 90, 200, 28, "ROUND(Total,2)"));
+  private void AddRect() => Elements.Add(DesignElement.CreateRect(40, 140, 200, 60));
+  private void Clear() => Elements.Clear();
+
+  private void Refresh()
+  {
+    var parameters = new Dictionary<string, object?>();
+    try
+    {
+      if (!string.IsNullOrWhiteSpace(ParamsJson))
+        parameters = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(ParamsJson) ?? new();
+    }
+    catch { parameters = new(); }
+
+    foreach (var el in Elements)
+    {
+      if (el.Kind == ElementKind.Text)
+      {
+        el.Display = el.Text ?? "";
+      }
+      else if (el.Kind == ElementKind.Expression)
+      {
+        try { el.Display = Evaluator.Evaluate(el.Expr ?? "", parameters)?.ToString() ?? string.Empty; }
+        catch { el.Display = "{{error}}"; }
+      }
+    }
+    StateHasChanged();
+  }
+
+  private async Task Save()
+  {
+    if (SelectedTemplate is null) return;
+    SelectedTemplate.Description = System.Text.Json.JsonSerializer.Serialize(Elements);
+    await TemplateService.UpdateDescriptionAsync(SelectedTemplate.Id, SelectedTemplate.Description);
+  }
+
+  [JSInvokable]
+  public void UpdatePosition(string id, double x, double y)
+  {
+    if (Guid.TryParse(id, out var gid))
+    {
+      var el = Elements.FirstOrDefault(e => e.Id == gid);
+      if (el != null) { el.X = x; el.Y = y; InvokeAsync(StateHasChanged); }
+    }
+  }
+
+  public class DesignElement
+  {
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public ElementKind Kind { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double W { get; set; }
+    public double H { get; set; }
+    public string? Text { get; set; }
+    public string? Expr { get; set; }
+    public string? Display { get; set; }
+    public string Xpx => X + "px";
+    public string Ypx => Y + "px";
+    public string Wpx => W + "px";
+    public string Hpx => H + "px";
+    public static DesignElement CreateText(double x, double y, double w, double h, string text) => new() { Kind = ElementKind.Text, X = x, Y = y, W = w, H = h, Text = text, Display = text };
+    public static DesignElement CreateExpr(double x, double y, double w, double h, string expr) => new() { Kind = ElementKind.Expression, X = x, Y = y, W = w, H = h, Expr = expr };
+    public static DesignElement CreateRect(double x, double y, double w, double h) => new() { Kind = ElementKind.Rectangle, X = x, Y = y, W = w, H = h };
+  }
+
+  public enum ElementKind { Text, Expression, Rectangle }
+}

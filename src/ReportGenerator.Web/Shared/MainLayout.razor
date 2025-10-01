@@ -1,0 +1,26 @@
+@inherits LayoutComponentBase
+
+<header>
+  <nav class="navbar navbar-expand-lg bg-body shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-semibold" href="/">
+        <i class="bi bi-brush"></i> Report Generator
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample" aria-controls="navbarsExample" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarsExample">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/">Designer</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="container-fluid py-3">
+  @Body
+  <footer class="py-4 text-center text-body-secondary">
+    <small>© @DateTime.Now.Year Report Generator</small>
+  </footer>
+</main>

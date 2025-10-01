@@ -1,5 +1,6 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Media;
 
 namespace ReportGenerator.App.Models;
 
@@ -7,7 +8,8 @@ public enum ElementKind
 {
     Text,
     Expression,
-    Rectangle
+    Rectangle,
+    Barcode
 }
 
 public partial class DesignElement : ObservableObject
@@ -40,5 +42,10 @@ public partial class DesignElement : ObservableObject
 
     [ObservableProperty]
     private double fontSize = 12;
-}
 
+    [ObservableProperty]
+    private ImageSource? imageSource;
+
+    [ObservableProperty]
+    private string barcodeFormat = "CODE_128";
+}
