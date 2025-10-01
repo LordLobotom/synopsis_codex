@@ -39,4 +39,20 @@ public class TemplateRepository : ITemplateRepository
         entity.Description = description;
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task UpdateNameAsync(Guid id, string name, CancellationToken ct = default)
+    {
+        var entity = await _db.Templates.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (entity is null) return;
+        entity.Name = name;
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await _db.Templates.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (entity is null) return;
+        _db.Templates.Remove(entity);
+        await _db.SaveChangesAsync(ct);
+    }
 }

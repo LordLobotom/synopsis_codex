@@ -22,6 +22,17 @@
             <input class="form-control" @bind="NewTemplateName" placeholder="New template name" />
             <button class="btn btn-primary" @onclick="AddTemplate"><i class="bi bi-plus-lg"></i></button>
           </div>
+          @if (SelectedTemplate is not null)
+          {
+            <div class="mt-3">
+              <label class="form-label">Rename</label>
+              <div class="input-group">
+                <input class="form-control" @bind="SelectedTemplateName" />
+                <button class="btn btn-outline-secondary" title="Save name" @onclick="SaveTemplateName"><i class="bi bi-save"></i></button>
+                <button class="btn btn-outline-danger" title="Delete template" @onclick="DeleteTemplate"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -166,6 +177,7 @@
   private List<ReportGenerator.Domain.Entities.Template> Templates = new();
   private ReportGenerator.Domain.Entities.Template? SelectedTemplate;
   private string NewTemplateName = string.Empty;
+  private string SelectedTemplateName = string.Empty;
   private string ParamsJson = "{\n  \"CustomerName\": \"John Doe\",\n  \"Total\": 123.45\n}";
   private List<DesignElement> Elements = new();
   private Guid? SelectedElementId;
@@ -189,6 +201,7 @@
   private void Select(ReportGenerator.Domain.Entities.Template t)
   {
     SelectedTemplate = t;
+    SelectedTemplateName = t.Name;
     Elements.Clear();
     try
     {
@@ -259,6 +272,25 @@
     var doc = new TemplateDoc { W = SheetWidth, H = SheetHeight, Elements = Elements };
     SelectedTemplate.Description = System.Text.Json.JsonSerializer.Serialize(doc);
     await TemplateService.UpdateDescriptionAsync(SelectedTemplate.Id, SelectedTemplate.Description);
+  }
+
+  private async Task SaveTemplateName()
+  {
+    if (SelectedTemplate is null) return;
+    var name = (SelectedTemplateName ?? "").Trim();
+    if (string.IsNullOrEmpty(name)) return;
+    await TemplateService.UpdateNameAsync(SelectedTemplate.Id, name);
+    SelectedTemplate.Name = name;
+  }
+
+  private async Task DeleteTemplate()
+  {
+    if (SelectedTemplate is null) return;
+    var id = SelectedTemplate.Id;
+    await TemplateService.DeleteAsync(id);
+    Templates.RemoveAll(t => t.Id == id);
+    SelectedTemplate = null;
+    Elements.Clear();
   }
 
   [JSInvokable]

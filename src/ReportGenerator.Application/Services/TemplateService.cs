@@ -34,4 +34,10 @@ public class TemplateService
 
     public Task UpdateDescriptionAsync(Guid id, string? description, CancellationToken ct = default)
         => _repository.UpdateDescriptionAsync(id, description, ct);
+
+    public Task UpdateNameAsync(Guid id, string name, CancellationToken ct = default)
+        => _repository.UpdateNameAsync(id, name, ct);
+
+    public Task DeleteAsync(Guid id, CancellationToken ct = default)
+        => _repository.DeleteAsync(id, ct);
 }
