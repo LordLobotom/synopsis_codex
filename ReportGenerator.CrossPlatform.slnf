@@ -1,0 +1,11 @@
+{
+  "solution": {
+    "path": "ReportGenerator.sln",
+    "projects": [
+      "src/ReportGenerator.Domain/ReportGenerator.Domain.csproj",
+      "src/ReportGenerator.Application/ReportGenerator.Application.csproj",
+      "src/ReportGenerator.Infrastructure/ReportGenerator.Infrastructure.csproj",
+      "tests/ReportGenerator.Domain.Tests/ReportGenerator.Domain.Tests.csproj"
+    ]
+  }
+}

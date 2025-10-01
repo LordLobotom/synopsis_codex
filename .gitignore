@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+TestResults/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+
+# Logs and local data
+Logs/
+templates.db
+
+# Windows Zone.Identifier streams copied as files
+*:\Zone.Identifier*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tooling
+/.scannerwork/
+/.sonarqube/
+
+# NuGet
+*.nupkg
+packages/
+
+# Rider/JetBrains
+.fleet/
