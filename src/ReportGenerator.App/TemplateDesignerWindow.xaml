@@ -1,0 +1,46 @@
+<Window x:Class="ReportGenerator.App.TemplateDesignerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Template Designer" Height="600" Width="1000" MinWidth="900" MinHeight="500">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.ColumnSpan="2" Text="Design printable template (use {{expr}} placeholders)" FontWeight="Bold" FontSize="16"/>
+
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,8,8,8">
+            <TextBlock Text="Template Body" DockPanel.Dock="Top" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding BodyText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+        </DockPanel>
+
+        <Grid Grid.Row="1" Grid.Column="1" Margin="8,8,0,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <GroupBox Header="Preview" Margin="0,0,0,8">
+                <FlowDocumentScrollViewer Document="{Binding PreviewDocument}"/>
+            </GroupBox>
+            <DockPanel Grid.Row="1">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+                    <TextBlock Text="Parameters (JSON)" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Content="Refresh" Command="{Binding RefreshPreviewCommand}" Width="80"/>
+                </StackPanel>
+                <TextBox Text="{Binding ParamsJson, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="100" VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+            </DockPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Save" Command="{Binding SaveCommand}" Width="100" Margin="0,0,8,0"/>
+            <Button Content="Print" Command="{Binding PrintCommand}" Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>
+

@@ -1,21 +1,94 @@
 <Window x:Class="ReportGenerator.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Report Generator" Height="400" Width="640">
+        Title="Report Generator" Height="700" Width="1100">
     <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="320"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Templates" FontSize="18" FontWeight="Bold"/>
+        <!-- Left: Templates -->
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Margin="0,0,12,0">
+            <TextBlock Text="Templates" FontSize="18" FontWeight="Bold"/>
+            <ListBox x:Name="TemplateList" Grid.Row="1" ItemsSource="{Binding Templates}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedTemplate, Mode=TwoWay}" Height="480"/>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBox Width="150" Margin="0,0,8,0" Text="{Binding NewTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Content="Add" Width="80" Command="{Binding AddTemplateCommand}"/>
+            </StackPanel>
+        </StackPanel>
 
-        <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" DisplayMemberPath="Name"/>
+        <!-- Center: Designer canvas with toolbar -->
+        <StackPanel Grid.Column="1">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Designer" FontSize="18" FontWeight="Bold" Margin="0,0,12,0"/>
+                <Button Content="Text" Margin="0,0,6,0" Command="{Binding AddTextCommand}"/>
+                <Button Content="Expr" Margin="0,0,6,0" Command="{Binding AddExprCommand}"/>
+                <Button Content="Rect" Margin="0,0,6,0" Command="{Binding AddRectCommand}"/>
+                <Button Content="Clear" Command="{Binding ClearElementsCommand}"/>
+            </StackPanel>
+            <Border BorderBrush="#CCC" BorderThickness="1">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#FAFAFA">
+                    <Canvas x:Name="DesignCanvas" Width="794" Height="1123" Background="White">
+                        <ItemsControl ItemsSource="{Binding Elements}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#999" BorderThickness="1" Background="#FFFFFE" Padding="2" MouseLeftButtonDown="Element_MouseLeftButtonDown" MouseMove="Element_MouseMove" MouseLeftButtonUp="Element_MouseLeftButtonUp">
+                                        <ContentControl>
+                                            <ContentControl.Style>
+                                                <Style TargetType="ContentControl">
+                                                    <Setter Property="Content" Value="{Binding DisplayText}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Kind}" Value="Rectangle">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate>
+                                                                        <Rectangle Fill="#FFEFF7" Stroke="#668" StrokeDashArray="4 2" Width="{Binding Width}" Height="{Binding Height}"/>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ContentControl.Style>
+                                        </ContentControl>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Canvas>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <TextBox Width="280" Margin="0,0,8,0" Text="{Binding NewTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
-            <Button Content="Add" Width="80" Command="{Binding AddTemplateCommand}"/>
+        <!-- Right: Params + Actions -->
+        <StackPanel Grid.Column="2">
+            <TextBlock Text="Parameters (JSON)" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding ParamsJson, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="200" VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,6">
+                <Button Content="Refresh" Command="{Binding RefreshRenderCommand}" Width="100"/>
+                <Button Content="Save" Command="{Binding SaveLayoutCommand}" Margin="8,0,0,0" Width="100"/>
+            </StackPanel>
+            <Separator/>
+            <TextBlock Text="Print" FontWeight="SemiBold" Margin="0,6,0,2"/>
+            <Button Content="Print Canvas" Command="{Binding PrintCommand}" Width="120"/>
         </StackPanel>
     </Grid>
 </Window>

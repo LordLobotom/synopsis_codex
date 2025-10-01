@@ -11,5 +11,5 @@ public interface ITemplateRepository
     Task<Template?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Template>> ListAsync(CancellationToken ct = default);
     Task<Template> AddAsync(Template template, CancellationToken ct = default);
+    Task UpdateDescriptionAsync(Guid id, string? description, CancellationToken ct = default);
 }
-

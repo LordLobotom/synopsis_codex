@@ -160,7 +160,115 @@ internal sealed class SimpleEvaluator : NCalc.Visitors.ILogicalExpressionVisitor
 
     public void Visit(NCalc.Domain.Function function)
     {
-        // No built-in functions supported in this minimal evaluator
+        var name = function.Identifier.Name?.Trim() ?? string.Empty;
+        name = name.ToUpperInvariant();
+
+        object?[] args = EvaluateArgs(function.Expressions);
+
+        switch (name)
+        {
+            case "IF":
+            case "IIF":
+                EnsureArgCount(name, args, 3);
+                Result = ToBoolean(args[0]) ? args[1] : args[2];
+                return;
+
+            case "LEFT":
+                EnsureArgCount(name, args, 2);
+                Result = Left(ToString(args[0]), ToInt32(args[1]));
+                return;
+            case "RIGHT":
+                EnsureArgCount(name, args, 2);
+                Result = Right(ToString(args[0]), ToInt32(args[1]));
+                return;
+            case "SUBSTRING":
+            case "MID":
+                if (args.Length < 2 || args.Length > 3) throw new ArgumentException($"{name} expects 2 or 3 arguments.");
+                var s = ToString(args[0]);
+                var start = ToInt32(args[1]);
+                var len = args.Length == 3 ? ToInt32(args[2]) : s.Length - start;
+                Result = SubstringSafe(s, start, len);
+                return;
+            case "LEN":
+            case "LENGTH":
+                EnsureArgCount(name, args, 1);
+                Result = ToString(args[0]).Length;
+                return;
+            case "CONCAT":
+                Result = string.Concat(args.Select(a => ToString(a)));
+                return;
+            case "ABS":
+                EnsureArgCount(name, args, 1);
+                Result = Abs(args[0]);
+                return;
+            case "MIN":
+                EnsureArgCount(name, args, 2);
+                Result = Compare(args[0], args[1]) <= 0 ? args[0] : args[1];
+                return;
+            case "MAX":
+                EnsureArgCount(name, args, 2);
+                Result = Compare(args[0], args[1]) >= 0 ? args[0] : args[1];
+                return;
+            case "ROUND":
+                if (args.Length < 1 || args.Length > 2) throw new ArgumentException("ROUND expects 1 or 2 arguments.");
+                var digits = args.Length == 2 ? ToInt32(args[1]) : 0;
+                Result = Round(args[0], digits);
+                return;
+            case "FLOOR":
+                EnsureArgCount(name, args, 1);
+                Result = Floor(args[0]);
+                return;
+            case "CEILING":
+            case "CEIL":
+                EnsureArgCount(name, args, 1);
+                Result = Ceiling(args[0]);
+                return;
+            case "NOW":
+                EnsureArgCount(name, args, 0);
+                Result = DateTime.Now;
+                return;
+            case "DATE":
+                EnsureArgCount(name, args, 3);
+                Result = new DateTime(ToInt32(args[0]), ToInt32(args[1]), ToInt32(args[2]));
+                return;
+            case "TOINT":
+                EnsureArgCount(name, args, 1);
+                Result = ToInt32(args[0]);
+                return;
+            case "TODECIMAL":
+                EnsureArgCount(name, args, 1);
+                Result = ToDecimal(args[0]);
+                return;
+            case "TOSTRING":
+                EnsureArgCount(name, args, 1);
+                Result = ToString(args[0]);
+                return;
+            case "TOBOOL":
+            case "TOBOOLEAN":
+                EnsureArgCount(name, args, 1);
+                Result = ToBoolean(args[0]);
+                return;
+            case "CONTAINS":
+                EnsureArgCount(name, args, 2);
+                Result = ToString(args[0]).Contains(ToString(args[1]), StringComparison.Ordinal);
+                return;
+            case "STARTSWITH":
+                EnsureArgCount(name, args, 2);
+                Result = ToString(args[0]).StartsWith(ToString(args[1]), StringComparison.Ordinal);
+                return;
+            case "ENDSWITH":
+                EnsureArgCount(name, args, 2);
+                Result = ToString(args[0]).EndsWith(ToString(args[1]), StringComparison.Ordinal);
+                return;
+            case "COALESCE":
+                foreach (var a in args)
+                {
+                    if (a is not null) { Result = a; return; }
+                }
+                Result = null;
+                return;
+        }
+
         throw new NCalc.Exceptions.NCalcFunctionNotFoundException(function.Identifier.Name, function.Identifier.Name);
     }
 
@@ -301,4 +409,88 @@ internal sealed class SimpleEvaluator : NCalc.Visitors.ILogicalExpressionVisitor
     }
 
     private enum NumberKind { None = 0, Integer = 1, Double = 2, Decimal = 3 }
+
+    private static string Left(string s, int len)
+    {
+        if (string.IsNullOrEmpty(s) || len <= 0) return string.Empty;
+        if (len >= s.Length) return s;
+        return s.Substring(0, len);
+    }
+    private static string Right(string s, int len)
+    {
+        if (string.IsNullOrEmpty(s) || len <= 0) return string.Empty;
+        if (len >= s.Length) return s;
+        return s.Substring(s.Length - len, len);
+    }
+    private static string SubstringSafe(string s, int start, int length)
+    {
+        if (start < 0) start = 0;
+        if (start > s.Length) return string.Empty;
+        if (length < 0) length = 0;
+        if (start + length > s.Length) length = s.Length - start;
+        return s.Substring(start, length);
+    }
+    private static object Abs(object? v)
+    {
+        var n = ToNumber(v);
+        return n switch
+        {
+            decimal d => Math.Abs(d),
+            double db => Math.Abs(db),
+            long l => Math.Abs(l),
+            _ => n
+        };
+    }
+    private static object Round(object? v, int digits)
+    {
+        var n = ToNumber(v);
+        return n switch
+        {
+            decimal d => Math.Round(d, digits, MidpointRounding.AwayFromZero),
+            double db => Math.Round(db, digits, MidpointRounding.AwayFromZero),
+            long l => l, // integers unchanged
+            _ => n
+        };
+    }
+    private static object Floor(object? v)
+    {
+        var n = ToNumber(v);
+        return n switch
+        {
+            decimal d => Math.Floor(d),
+            double db => Math.Floor(db),
+            long l => l,
+            _ => n
+        };
+    }
+    private static object Ceiling(object? v)
+    {
+        var n = ToNumber(v);
+        return n switch
+        {
+            decimal d => Math.Ceiling(d),
+            double db => Math.Ceiling(db),
+            long l => l,
+            _ => n
+        };
+    }
+
+    private object?[] EvaluateArgs(NCalc.Domain.LogicalExpression[]? expressions)
+    {
+        if (expressions == null || expressions.Length == 0) return Array.Empty<object?>();
+        var results = new object?[expressions.Length];
+        for (int i = 0; i < expressions.Length; i++)
+        {
+            expressions[i].Accept(this);
+            results[i] = Result;
+        }
+        return results;
+    }
+
+    private static void EnsureArgCount(string name, object?[] args, int expected)
+    {
+        if (args.Length != expected)
+            throw new ArgumentException($"{name} expects {expected} argument(s), got {args.Length}.");
+    }
+    private static string ToString(object? v) => v?.ToString() ?? string.Empty;
 }

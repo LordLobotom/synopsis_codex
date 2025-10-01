@@ -31,5 +31,7 @@ public class TemplateService
 
         return await _repository.AddAsync(template, ct);
     }
-}
 
+    public Task UpdateDescriptionAsync(Guid id, string? description, CancellationToken ct = default)
+        => _repository.UpdateDescriptionAsync(id, description, ct);
+}

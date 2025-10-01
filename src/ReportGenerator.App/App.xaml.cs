@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using ReportGenerator.Application.Services;
 using ReportGenerator.Domain.Interfaces;
 using ReportGenerator.Infrastructure.Data;
+using ReportGenerator.Infrastructure.Expressions;
 using ReportGenerator.Infrastructure.Repositories;
 using Serilog;
 
@@ -43,8 +44,10 @@ public partial class App : System.Windows.Application
 
                 services.AddScoped<ITemplateRepository, TemplateRepository>();
                 services.AddTransient<TemplateService>();
+                services.AddSingleton<IExpressionEvaluator, NCalcExpressionEvaluator>();
 
                 services.AddSingleton<MainWindow>();
+                services.AddTransient<TemplateDesignerWindow>();
             })
             .UseSerilog()
             .Build();
