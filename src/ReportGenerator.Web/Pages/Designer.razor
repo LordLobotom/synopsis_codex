@@ -27,7 +27,15 @@
     </div>
     <div class="col-12 col-lg-6">
       <div class="card shadow-sm mb-3">
-        <div class="card-body d-flex gap-2 flex-wrap">
+        <div class="card-body d-flex gap-2 flex-wrap align-items-end">
+          <div class="me-3">
+            <label class="form-label">Canvas W (px)</label>
+            <input class="form-control form-control-sm" type="number" min="100" max="4000" step="1" @bind="SheetWidth" />
+          </div>
+          <div class="me-3">
+            <label class="form-label">Canvas H (px)</label>
+            <input class="form-control form-control-sm" type="number" min="100" max="6000" step="1" @bind="SheetHeight" />
+          </div>
           <button class="btn btn-outline-primary btn-sm" @onclick="AddText"><i class="bi bi-type"></i> Text</button>
           <button class="btn btn-outline-primary btn-sm" @onclick="AddExpr"><i class="bi bi-braces"></i> Expr</button>
           <button class="btn btn-outline-primary btn-sm" @onclick="AddRect"><i class="bi bi-square"></i> Rect</button>
@@ -42,10 +50,10 @@
           <i class="bi bi-stickies me-2"></i> Canvas
         </div>
         <div class="card-body d-flex justify-content-center">
-          <div id="sheet" class="sheet" @ref="SheetRef">
+          <div id="sheet" class="sheet" @ref="SheetRef" style="width:@(SheetWidth)px;height:@(SheetHeight)px">
             @foreach (var el in Elements)
             {
-              <div class="design-item" id="el-@el.Id" style="left:@el.Xpx; top:@el.Ypx; width:@el.Wpx; height:@el.Hpx" data-id="@el.Id">
+              <div class="design-item" id="el-@el.Id" style="left:@el.Xpx; top:@el.Ypx; width:@el.Wpx; height:@el.Hpx" data-id="@el.Id" @onclick="(() => SelectElement(el.Id))">
                 @if (el.Kind == ElementKind.Rectangle)
                 {
                   <div class="rect"></div>
@@ -67,6 +75,7 @@
         </div>
         <div class="card-body">
           <textarea class="form-control" @bind="ParamsJson"></textarea>
+          <small class="text-body-secondary d-block mt-1">Preview parameters for expressions, e.g.: { "CustomerName": "John", "Total": 123.45 }</small>
           <div class="d-flex gap-2 mt-3">
             <button class="btn btn-outline-secondary btn-sm" @onclick="Refresh"><i class="bi bi-arrow-repeat"></i> Refresh</button>
             @if (SelectedTemplate != null)
@@ -74,6 +83,79 @@
               <a class="btn btn-outline-primary btn-sm" href="/api/templates/@SelectedTemplate.Id/export" target="_blank"><i class="bi bi-box-arrow-up"></i> Export JSON</a>
             }
           </div>
+        </div>
+      </div>
+      <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white"><i class="bi bi-layers me-2"></i> Elements</div>
+        <div class="card-body">
+          @if (Elements.Count == 0)
+          {
+            <em>No elements yet</em>
+          }
+          else
+          {
+            <ul class="list">
+              @foreach (var e in Elements)
+              {
+                <li class="@(SelectedElementId == e.Id ? "selected" : null)">
+                  <span @onclick="(() => SelectElement(e.Id))">@((string.IsNullOrWhiteSpace(e.Name) ? e.Kind.ToString() : e.Name))</span>
+                  <span class="float-end btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" title="Up" @onclick="(() => MoveUp(e.Id))"><i class="bi bi-chevron-up"></i></button>
+                    <button class="btn btn-outline-secondary" title="Down" @onclick="(() => MoveDown(e.Id))"><i class="bi bi-chevron-down"></i></button>
+                    <button class="btn btn-outline-danger" title="Delete" @onclick="(() => Remove(e.Id))"><i class="bi bi-x"></i></button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+      <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white"><i class="bi bi-pencil-square me-2"></i> Selected Element</div>
+        <div class="card-body">
+          @if (SelectedElement is not null)
+          {
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Name</label>
+                <input class="form-control form-control-sm" @bind-value="SelectedElement.Name" @bind-value:event="oninput" />
+              </div>
+              <div class="col-6">
+                <label class="form-label">X</label>
+                <input class="form-control form-control-sm" type="number" @bind-value="SelectedElement.X" @bind-value:event="oninput" />
+              </div>
+              <div class="col-6">
+                <label class="form-label">Y</label>
+                <input class="form-control form-control-sm" type="number" @bind-value="SelectedElement.Y" @bind-value:event="oninput" />
+              </div>
+              <div class="col-6">
+                <label class="form-label">W</label>
+                <input class="form-control form-control-sm" type="number" @bind-value="SelectedElement.W" @bind-value:event="oninput" />
+              </div>
+              <div class="col-6">
+                <label class="form-label">H</label>
+                <input class="form-control form-control-sm" type="number" @bind-value="SelectedElement.H" @bind-value:event="oninput" />
+              </div>
+              @if (SelectedElement.Kind == ElementKind.Text)
+              {
+                <div class="col-12">
+                  <label class="form-label">Text</label>
+                  <input class="form-control form-control-sm" value="@SelectedElement.Text" @oninput="OnTextChanged" />
+                </div>
+              }
+              @if (SelectedElement.Kind == ElementKind.Expression)
+              {
+                <div class="col-12">
+                  <label class="form-label">Expression</label>
+                  <input class="form-control form-control-sm" value="@SelectedElement.Expr" @oninput="OnExprChanged" />
+                </div>
+              }
+            </div>
+          }
+          else
+          {
+            <em>No element selected</em>
+          }
         </div>
       </div>
     </div>
@@ -86,6 +168,10 @@
   private string NewTemplateName = string.Empty;
   private string ParamsJson = "{\n  \"CustomerName\": \"John Doe\",\n  \"Total\": 123.45\n}";
   private List<DesignElement> Elements = new();
+  private Guid? SelectedElementId;
+  private DesignElement? SelectedElement => SelectedElementId.HasValue ? Elements.FirstOrDefault(e => e.Id == SelectedElementId) : null;
+  private double SheetWidth { get; set; } = 794;
+  private double SheetHeight { get; set; } = 1123;
   // reserved for future default element type selection
   private ElementReference SheetRef;
 
@@ -108,8 +194,20 @@
     {
       if (!string.IsNullOrWhiteSpace(t.Description))
       {
-        var list = System.Text.Json.JsonSerializer.Deserialize<List<DesignElement>>(t.Description!);
-        if (list != null) Elements = list;
+        // Try TemplateDoc first
+        var doc = System.Text.Json.JsonSerializer.Deserialize<TemplateDoc>(t.Description!);
+        if (doc?.Elements != null && doc.Elements.Count > 0)
+        {
+          SheetWidth = doc.W > 0 ? doc.W : SheetWidth;
+          SheetHeight = doc.H > 0 ? doc.H : SheetHeight;
+          Elements = doc.Elements;
+        }
+        else
+        {
+          // Backward compatibility: plain element list
+          var list = System.Text.Json.JsonSerializer.Deserialize<List<DesignElement>>(t.Description!);
+          if (list != null) Elements = list;
+        }
       }
     }
     catch { }
@@ -125,9 +223,9 @@
     NewTemplateName = string.Empty;
   }
 
-  private void AddText() => Elements.Add(DesignElement.CreateText(50, 50, 160, 28, "Text"));
-  private void AddExpr() => Elements.Add(DesignElement.CreateExpr(50, 90, 200, 28, "ROUND(Total,2)"));
-  private void AddRect() => Elements.Add(DesignElement.CreateRect(40, 140, 200, 60));
+  private void AddText() => Elements.Add(DesignElement.CreateText(50, 50, 160, 28, $"Text {Elements.Count(e=>e.Kind==ElementKind.Text)+1}"));
+  private void AddExpr() => Elements.Add(DesignElement.CreateExpr(50, 90, 200, 28, "ROUND(Total,2)", $"Expr {Elements.Count(e=>e.Kind==ElementKind.Expression)+1}"));
+  private void AddRect() => Elements.Add(DesignElement.CreateRect(40, 140, 200, 60, $"Rect {Elements.Count(e=>e.Kind==ElementKind.Rectangle)+1}"));
   private void Clear() => Elements.Clear();
 
   private void Refresh()
@@ -158,7 +256,8 @@
   private async Task Save()
   {
     if (SelectedTemplate is null) return;
-    SelectedTemplate.Description = System.Text.Json.JsonSerializer.Serialize(Elements);
+    var doc = new TemplateDoc { W = SheetWidth, H = SheetHeight, Elements = Elements };
+    SelectedTemplate.Description = System.Text.Json.JsonSerializer.Serialize(doc);
     await TemplateService.UpdateDescriptionAsync(SelectedTemplate.Id, SelectedTemplate.Description);
   }
 
@@ -168,14 +267,54 @@
     if (Guid.TryParse(id, out var gid))
     {
       var el = Elements.FirstOrDefault(e => e.Id == gid);
-      if (el != null) { el.X = x; el.Y = y; InvokeAsync(StateHasChanged); }
+      if (el != null) { el.X = x; el.Y = y; SelectedElementId = gid; InvokeAsync(StateHasChanged); }
     }
+  }
+
+  private void SelectElement(Guid id)
+  {
+    SelectedElementId = id;
+  }
+
+  private async Task OnTextChanged(ChangeEventArgs e)
+  {
+    if (SelectedElement is null) return;
+    SelectedElement.Text = e?.Value?.ToString();
+    Refresh();
+    await InvokeAsync(StateHasChanged);
+  }
+
+  private async Task OnExprChanged(ChangeEventArgs e)
+  {
+    if (SelectedElement is null) return;
+    SelectedElement.Expr = e?.Value?.ToString();
+    Refresh();
+    await InvokeAsync(StateHasChanged);
+  }
+
+  private void MoveUp(Guid id)
+  {
+    var i = Elements.FindIndex(e => e.Id == id);
+    if (i > 0) (Elements[i - 1], Elements[i]) = (Elements[i], Elements[i - 1]);
+  }
+
+  private void MoveDown(Guid id)
+  {
+    var i = Elements.FindIndex(e => e.Id == id);
+    if (i >= 0 && i < Elements.Count - 1) (Elements[i + 1], Elements[i]) = (Elements[i], Elements[i + 1]);
+  }
+
+  private void Remove(Guid id)
+  {
+    Elements.RemoveAll(e => e.Id == id);
+    if (SelectedElementId == id) SelectedElementId = null;
   }
 
   public class DesignElement
   {
     public Guid Id { get; set; } = Guid.NewGuid();
     public ElementKind Kind { get; set; }
+    public string? Name { get; set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double W { get; set; }
@@ -187,10 +326,27 @@
     public string Ypx => Y + "px";
     public string Wpx => W + "px";
     public string Hpx => H + "px";
-    public static DesignElement CreateText(double x, double y, double w, double h, string text) => new() { Kind = ElementKind.Text, X = x, Y = y, W = w, H = h, Text = text, Display = text };
-    public static DesignElement CreateExpr(double x, double y, double w, double h, string expr) => new() { Kind = ElementKind.Expression, X = x, Y = y, W = w, H = h, Expr = expr };
-    public static DesignElement CreateRect(double x, double y, double w, double h) => new() { Kind = ElementKind.Rectangle, X = x, Y = y, W = w, H = h };
+    public static DesignElement CreateText(double x, double y, double w, double h, string text, string? name = null) => new() { Kind = ElementKind.Text, X = x, Y = y, W = w, H = h, Text = text, Display = text, Name = name };
+    public static DesignElement CreateExpr(double x, double y, double w, double h, string expr, string? name = null) => new() { Kind = ElementKind.Expression, X = x, Y = y, W = w, H = h, Expr = expr, Name = name };
+    public static DesignElement CreateRect(double x, double y, double w, double h, string? name = null) => new() { Kind = ElementKind.Rectangle, X = x, Y = y, W = w, H = h, Name = name };
   }
 
   public enum ElementKind { Text, Expression, Rectangle }
+
+  public class TemplateDoc
+  {
+    public double W { get; set; }
+    public double H { get; set; }
+    public List<DesignElement> Elements { get; set; } = new();
+    // Optional future data source for SQL binding
+    public DataSource? DataSource { get; set; }
+  }
+
+  public class DataSource
+  {
+    public string Provider { get; set; } = "SqlServer"; // or Sqlite
+    public string ConnectionName { get; set; } = "Default"; // resolved externally
+    public string Query { get; set; } = "SELECT * FROM Items WHERE DocId = @DocId";
+    public Dictionary<string, object?> Parameters { get; set; } = new();
+  }
 }
